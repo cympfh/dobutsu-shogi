@@ -1,21 +1,11 @@
 #![allow(unused_imports)]
+use std::env;
 use std::io::{ self, Write };
 use std::str::FromStr;
 use std::cmp::{ min, max };
 use std::collections::{ BinaryHeap, VecDeque };
 
 extern crate rand;
-
-enum Piece {
-    Chick, Chicken,
-    Lion, Elephant, Giraffe
-}
-
-enum Owner {
-    Next, Prev
-}
-
-struct Field (Vec<Vec<(Piece, Owner)>>);
 
 #[allow(unused_macros)]
 macro_rules! trace {
@@ -36,10 +26,183 @@ macro_rules! put {
     };
 }
 
-const M: usize = 1_000_000_007;
+/**
+ * Data Structures
+ */
+
+#[derive(Clone, Debug)]
+enum Piece {
+    Chick, Chicken,
+    Lion, Elephant, Giraffe
+}
+use Piece::{Chick, Chicken, Lion, Elephant, Giraffe};
+
+#[derive(Clone, Debug)]
+enum Owner {
+    Next, Prev
+}
+use Owner::{Next, Prev};
+
+fn char2piece(c: char) -> Option<Piece> {
+    if c == 'L' {
+        Some(Lion)
+    } else if c == 'C' {
+        Some(Chick)
+    } else if c == 'D' {
+        Some(Chicken)
+    } else if c == 'E' {
+        Some(Elephant)
+    } else if c == 'G' {
+        Some(Giraffe)
+    } else {
+        None
+    }
+}
+
+fn piece2char(p: Piece) -> char {
+    match p {
+        Chick => 'C',
+        Chicken => 'D',
+        Elephant => 'E',
+        Giraffe => 'G',
+        Lion => 'L',
+    }
+}
+
+fn char2piece_with_owner(c: char, d: char) -> Option<(Owner, Piece)> {
+    if c == 'P' {
+        Some((Prev, char2piece(d).unwrap()))
+    } else if c == 'N' {
+        Some((Next, char2piece(d).unwrap()))
+    } else {
+        None
+    }
+}
+
+struct State {
+    field: Vec<Vec<Option<(Owner, Piece)>>>,
+    keep_next: Vec<Piece>,
+    keep_prev: Vec<Piece>
+}
+
+impl State {
+
+    // fn new() -> State {
+    //     let mut f = vec![vec![None; 3]; 4];
+    //     f[0][0] = Some((Prev, Giraffe));
+    //     f[0][1] = Some((Prev, Lion));
+    //     f[0][2] = Some((Prev, Elephant));
+    //     f[1][1] = Some((Prev, Chick));
+    //     f[2][1] = Some((Next, Chick));
+    //     f[3][0] = Some((Next, Elephant));
+    //     f[3][1] = Some((Next, Lion));
+    //     f[3][2] = Some((Next, Giraffe));
+    //     State { field: f, keep_next: vec![], keep_prev: vec![] }
+    // }
+
+    fn read() -> State {
+        let mut sc = Scanner::new();
+
+        let mut f = vec![vec![None; 3]; 4];
+        for i in 0..4 {
+            let cs: Vec<char> = sc.cin::<String>().chars().collect();
+            for j in 0..3 {
+                let p = char2piece_with_owner(cs[2 * j], cs[2 * j + 1]);
+                f[i][j] = p;
+            }
+        }
+
+        let mut kn = vec![];
+        {
+            let cs: Vec<char> = sc.cin::<String>().chars().collect();
+            for c in cs {
+                if let Some(p) = char2piece(c) {
+                    kn.push(p);
+                }
+            }
+        }
+
+        let mut kp = vec![];
+        {
+            let cs: Vec<char> = sc.cin::<String>().chars().collect();
+            for c in cs {
+                if let Some(p) = char2piece(c) {
+                    kp.push(p);
+                }
+            }
+        }
+
+        State { field: f, keep_next: kn, keep_prev: kp }
+    }
+
+    fn print(&self) {
+
+        // field
+        for i in 0..4 {
+            for j in 0..3 {
+                if let Some((ref owner, ref p)) = self.field[i][j] {
+                    match owner {
+                        &Next => print!("N"),
+                        &Prev => print!("P")
+                    }
+                    print!("{}", piece2char(p.clone()));
+                } else {
+                    print!("..")
+                }
+            }
+            println!("");
+        }
+
+        // keeps
+        if self.keep_next.len() > 0 {
+            for p in self.keep_next.iter() {
+                print!("{}", piece2char(p.clone()));
+            }
+            println!("");
+        } else {
+            println!(".");
+        }
+
+        if self.keep_prev.len() > 0 {
+            for p in self.keep_prev.iter() {
+                print!("{}", piece2char(p.clone()));
+            }
+            println!("");
+        } else {
+            println!(".");
+        }
+    }
+
+}
+
+fn usage() {
+    println!(r#"dshogi
+
+Usage:
+    dshogi [COMMAND]
+
+COMMAND:
+
+    solve
+    put
+    check
+"#);
+
+}
 
 fn main() {
-    let mut sc = Scanner::new();
+
+    let args: Vec<String> = env::args().collect();
+    let s = State::read();
+
+    if args.len() < 2 {
+        usage();
+    } else {
+        println!("unknown command: {}", args[1]);
+        usage();
+    }
+
+    s.print();
 }
 
 #[allow(dead_code)]

@@ -30,7 +30,7 @@ macro_rules! put {
  * Data Structures
  */
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 enum Piece {
     Chick, Chicken,
     Lion, Elephant, Giraffe
@@ -38,10 +38,10 @@ enum Piece {
 use Piece::{Chick, Chicken, Lion, Elephant, Giraffe};
 
 #[derive(Clone, Debug)]
-enum Owner {
+enum Player {
     Next, Prev
 }
-use Owner::{Next, Prev};
+use Player::{Next, Prev};
 
 fn char2piece(c: char) -> Option<Piece> {
     if c == 'L' {
@@ -69,7 +69,7 @@ fn piece2char(p: Piece) -> char {
     }
 }
 
-fn char2piece_with_owner(c: char, d: char) -> Option<(Owner, Piece)> {
+fn char2piece_with_owner(c: char, d: char) -> Option<(Player, Piece)> {
     if c == 'P' {
         Some((Prev, char2piece(d).unwrap()))
     } else if c == 'N' {
@@ -80,7 +80,7 @@ fn char2piece_with_owner(c: char, d: char) -> Option<(Owner, Piece)> {
 }
 
 struct State {
-    field: Vec<Vec<Option<(Owner, Piece)>>>,
+    field: Vec<Vec<Option<(Player, Piece)>>>,
     keep_next: Vec<Piece>,
     keep_prev: Vec<Piece>
 }
@@ -173,6 +173,20 @@ impl State {
         }
     }
 
+    fn check(&self) -> Option<Player> {
+        for p in self.keep_next.iter() {
+            if p == &Lion {
+                return Some(Next)
+            }
+        }
+        for p in self.keep_prev.iter() {
+            if p == &Lion {
+                return Some(Prev)
+            }
+        }
+        None
+    }
+
 }
 
 fn usage() {
@@ -184,7 +198,7 @@ Usage:
 COMMAND:
 
     solve
-    put
+    play
     check
 "#);
 
@@ -193,16 +207,29 @@ COMMAND:
 fn main() {
 
     let args: Vec<String> = env::args().collect();
-    let s = State::read();
 
     if args.len() < 2 {
+
         usage();
+
+    } else if args[1] == "check" {
+
+        let s = State::read();
+        if let Some(win_player) = s.check() {
+            match win_player {
+                Next => println!("N"),
+                Prev => println!("P"),
+            }
+        } else {
+            println!("going")
+        }
+
     } else {
+
         println!("unknown command: {}", args[1]);
         usage();
-    }
 
-    s.print();
+    }
 }
 
 #[allow(dead_code)]

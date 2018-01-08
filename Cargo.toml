@@ -1,0 +1,7 @@
+[package]
+name = "dobutsu-shogi"
+version = "0.1.0"
+authors = ["whoami <whose@mail.ai>"]
+
+[dependencies]
+rand = "*"
